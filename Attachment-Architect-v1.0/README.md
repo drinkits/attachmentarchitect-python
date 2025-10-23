@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" alt="Attachment Architect" width="400"/>
+  <img src="logo.png" alt="Attachment Architect" width="100"/>
   
   # Attachment Architect for Jira Data Center
   
