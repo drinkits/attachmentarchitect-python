@@ -1,8 +1,31 @@
-# 📊 Attachment Architect - Jira Data Center Storage Analyzer
+<div align="center">
+  <img src="logo.png" alt="Attachment Architect" width="400"/>
+  
+  # Attachment Architect for Jira Data Center
+  
+  **Professional Pre-Migration Storage Analysis Tool**
+  
+  Analyze your Jira Data Center attachment storage before migrating to Cloud. Identify duplicates, optimize storage, and plan your migration with confidence.
+  
+  [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](VERSION.txt)
+  [![License](https://img.shields.io/badge/license-Commercial-green.svg)](LICENSE)
+  [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+  [![Jira](https://img.shields.io/badge/Jira%20DC-8.0+-blue.svg)](https://www.atlassian.com/software/jira)
+</div>
 
-**Professional attachment storage analysis tool for Jira Data Center**
+---
 
-Analyze your Jira instance's attachment storage, identify duplicates, and discover optimization opportunities through beautiful visual reports.
+## 🎯 Perfect for Cloud Migration Planning
+
+Preparing to migrate from Jira Data Center to Cloud? **Attachment Architect** gives you a comprehensive pre-migration analysis of your attachment storage, helping you:
+
+- 🔍 **Identify cleanup opportunities** before migration
+- 💰 **Reduce migration costs** by removing duplicates
+- 📊 **Plan storage requirements** for your Cloud instance
+- 🎯 **Prioritize cleanup efforts** with actionable insights
+- 📈 **Generate executive reports** for stakeholder approval
+
+---
 
 ---
 
@@ -23,18 +46,19 @@ Analyze your Jira instance's attachment storage, identify duplicates, and discov
 ### 1. **Setup Environment**
 
 ```bash
-# Create virtual environment
-python -m venv venv
+# Windows
+setup.bat
 
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Linux/Mac
+chmod +x setup.sh
+./setup.sh
 ```
+
+This automatically:
+- Creates virtual environment
+- Installs dependencies
+- Creates `.env` from template
+- Creates necessary folders
 
 ### 2. **Configure Credentials**
 

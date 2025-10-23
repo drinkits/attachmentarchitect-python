@@ -411,13 +411,27 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        <!-- Header with Branding -->
         <div class="header">
-            <h1>📊 Attachment Architect - Visual Analysis</h1>
-            <div style="color: #7f8c8d; font-size: 14px;">
-                Scan ID: {scan_state['scan_id']} | 
-                Completed: {datetime.fromisoformat(scan_state['completion_time']).strftime('%Y-%m-%d %H:%M:%S')} | 
-                Duration: {scan_state['duration_ms']/1000:.1f}s
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="font-size: 48px; margin-right: 15px;">📊</div>
+                    <div>
+                        <h1 style="margin: 0; font-size: 28px;">Attachment Architect</h1>
+                        <div style="color: #7f8c8d; font-size: 14px; margin-top: 5px;">
+                            Pre-Migration Storage Analysis Report
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: right; color: #7f8c8d; font-size: 13px;">
+                    <div><strong>Scan ID:</strong> {scan_state['scan_id']}</div>
+                    <div><strong>Completed:</strong> {datetime.fromisoformat(scan_state['completion_time']).strftime('%Y-%m-%d %H:%M:%S')}</div>
+                    <div><strong>Duration:</strong> {scan_state['duration_ms']/1000:.1f}s</div>
+                </div>
+            </div>
+            <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px 15px; border-radius: 4px; font-size: 14px;">
+                <strong>💡 Pre-Migration Insight:</strong> This one-time analysis provides a snapshot of your Data Center storage. 
+                Planning to migrate to Cloud? Consider continuous monitoring to keep your new instance clean from Day 1.
             </div>
         </div>
         
@@ -464,6 +478,72 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
             
             {generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive)}
         </div>
+    </div>
+    
+    <!-- Footer with Call-to-Action -->
+    <footer style="margin-top: 50px; padding: 40px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="max-width: 900px; margin: 0 auto; text-align: center;">
+            <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">Ready for the Cloud?</h2>
+            
+            <p style="font-size: 18px; line-height: 1.8; margin-bottom: 25px; opacity: 0.95;">
+                This report has given you a powerful <strong>one-time snapshot</strong> of your Data Center instance. 
+                But what happens after you migrate to Cloud?
+            </p>
+            
+            <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 8px; margin-bottom: 30px; backdrop-filter: blur(10px);">
+                <h3 style="font-size: 24px; margin-bottom: 15px; color: white;">
+                    🚀 Attachment Architect for Jira Cloud
+                </h3>
+                <p style="font-size: 16px; line-height: 1.7; margin-bottom: 0;">
+                    Get this same level of insight and <strong>much more</strong>, with a <strong>live, continuous dashboard</strong>. 
+                    Automate your cleanup, set governance policies, and keep your new Cloud instance clean from Day 1.
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+                <a href="https://marketplace.atlassian.com/apps/2464899201/attachment-architect" 
+                   style="display: inline-block; padding: 15px 35px; background-color: white; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.2s;"
+                   onmouseover="this.style.transform='translateY(-2px)'"
+                   onmouseout="this.style.transform='translateY(0)'"
+                   target="_blank">
+                    📦 View on Atlassian Marketplace
+                </a>
+                
+                <a href="https://dev.drinkits.lv/" 
+                   style="display: inline-block; padding: 15px 35px; background-color: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; border: 2px solid white; transition: background 0.2s;"
+                   onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                   onmouseout="this.style.background='rgba(255,255,255,0.2)'"
+                   target="_blank">
+                    🌐 Learn More
+                </a>
+            </div>
+            
+            <div style="font-size: 14px; opacity: 0.9; margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.3);">
+                <p style="margin-bottom: 10px;">
+                    <strong>Why Continuous Monitoring Matters:</strong>
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: left; max-width: 800px; margin: 15px auto 0;">
+                    <div>✅ Real-time duplicate detection</div>
+                    <div>✅ Automated cleanup workflows</div>
+                    <div>✅ Storage governance policies</div>
+                    <div>✅ Cost optimization alerts</div>
+                    <div>✅ Compliance reporting</div>
+                    <div>✅ Multi-step safe deletion</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Branding Footer -->
+    <div style="text-align: center; padding: 20px; color: #7f8c8d; font-size: 13px;">
+        <p>
+            Report generated by <strong>Attachment Architect</strong> | 
+            <a href="https://dev.drinkits.lv/" style="color: #3498db; text-decoration: none;" target="_blank">Learn More</a> | 
+            <a href="mailto:support@drinkits.lv" style="color: #3498db; text-decoration: none;">Contact Support</a>
+        </p>
+        <p style="margin-top: 10px; font-size: 12px;">
+            © 2025 Attachment Architect Team. All rights reserved.
+        </p>
     </div>
     
     <script>

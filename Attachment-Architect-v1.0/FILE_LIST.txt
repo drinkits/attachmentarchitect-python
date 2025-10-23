@@ -1,26 +1,38 @@
 === ATTACHMENT ARCHITECT v1.0 - FILE LIST ===
 
-CORE FILES (Required):
+CORE FILES (Required) - 4 files:
 ├── jira_dc_scanner.py                    Main scanner application
 ├── generate_visual_analysis_report.py    Report generator
 ├── generate_html_content.py              HTML template engine
 └── test_connection.py                    Connection tester
 
-CONFIGURATION (Required):
+CONFIGURATION (Required) - 3 files:
 ├── .env.example                          Credentials template (copy to .env)
 ├── config.yaml                           Advanced settings
 └── requirements.txt                      Python dependencies
 
-SETUP SCRIPTS (Required):
+SETUP SCRIPTS (Required) - 2 files:
 ├── setup.bat                             Windows setup script
 └── setup.sh                              Linux/Mac setup script
 
-DOCUMENTATION (Recommended):
+LAUNCHER SCRIPTS (Recommended) - 4 files:
+├── run_scan.bat                          Windows scanner launcher
+├── run_scan.sh                           Linux/Mac scanner launcher
+├── test_connection.bat                   Windows connection tester
+└── test_connection.sh                    Linux/Mac connection tester
+
+DOCUMENTATION (Recommended) - 9 files:
 ├── START_HERE.txt                        Quick start guide
 ├── QUICKSTART.md                         5-minute setup guide
 ├── README.md                             Full documentation (400+ lines)
 ├── PRODUCTION_READY.md                   Deployment checklist
-└── CHANGELOG.md                          Version history
+├── CHANGELOG.md                          Version history
+├── CHECKPOINTING_GUIDE.md                Checkpointing system guide
+├── ENHANCEMENTS_IMPLEMENTED.md           Implementation details
+├── RELEASE_NOTES.md                      v1.0 release notes
+└── FILE_LIST.txt                         This file
+
+TOTAL: 22 files
 
 FOLDERS (Created automatically by setup):
 ├── reports/                              Generated JSON and HTML reports

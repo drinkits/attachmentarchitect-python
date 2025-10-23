@@ -1,0 +1,54 @@
+Attachment Architect
+Version: 1.0.0
+Release Date: January 23, 2025
+Status: Production Ready
+License: Commercial
+
+Build Information:
+- Python: 3.8+
+- Platform: Windows, Linux, macOS
+- Architecture: x64
+
+Package Contents:
+- Core Files: 4
+- Configuration: 3
+- Setup Scripts: 2
+- Launcher Scripts: 4
+- Documentation: 9
+- Total Files: 22
+
+Features:
+- Deep Storage Analysis
+- Visual HTML Reports (6 tabs)
+- Heat Index Analysis
+- Multi-threaded Performance
+- Checkpoint/Resume System
+- Duplicate Detection
+- Auto-Report Generation
+
+System Requirements:
+- Python 3.8 or higher
+- Jira Data Center 8.0+
+- 100 MB disk space
+- Network access to Jira
+
+Quick Start:
+1. Run setup.bat (Windows) or ./setup.sh (Linux/Mac)
+2. Edit .env with Jira credentials
+3. Run test_connection.bat/.sh
+4. Run run_scan.bat/.sh
+5. Open HTML report in browser
+
+Documentation:
+- START_HERE.txt - Quick overview
+- QUICKSTART.md - 5-minute guide
+- README.md - Full documentation
+- RELEASE_NOTES.md - What's new
+
+Support:
+- Check QUICKSTART.md for common issues
+- Review logs in ./logs/scanner.log
+- See README.md troubleshooting section
+
+Copyright (c) 2025 Attachment Architect Team
+All rights reserved.

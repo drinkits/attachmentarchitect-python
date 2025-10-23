@@ -578,6 +578,100 @@ class StorageManager:
         
         return duplicate_groups
     
+    def find_incomplete_scans(self) -> List[dict]:
+        """Find all incomplete scans."""
+        cursor = self.conn.cursor()
+        
+        cursor.execute('''
+            SELECT scan_id, start_time, processed_issues, total_issues, jql_query
+            FROM scans 
+            WHERE status = 'running' 
+            ORDER BY start_time DESC
+        ''')
+        
+        scans = []
+        for row in cursor.fetchall():
+            scans.append({
+                'scan_id': row['scan_id'],
+                'start_time': row['start_time'],
+                'processed_issues': row['processed_issues'],
+                'total_issues': row['total_issues'],
+                'jql_query': row['jql_query']
+            })
+        
+        return scans
+    
+    def list_all_scans(self) -> List[dict]:
+        """List all scans (completed and incomplete)."""
+        cursor = self.conn.cursor()
+        
+        cursor.execute('''
+            SELECT s.scan_id, s.status, s.start_time, s.completion_time, 
+                   s.duration_ms, s.processed_issues, s.total_issues,
+                   ss.total_files, ss.total_size
+            FROM scans s
+            LEFT JOIN scan_stats ss ON s.scan_id = ss.scan_id
+            ORDER BY s.start_time DESC
+        ''')
+        
+        scans = []
+        for row in cursor.fetchall():
+            scans.append({
+                'scan_id': row['scan_id'],
+                'status': row['status'],
+                'start_time': row['start_time'],
+                'completion_time': row['completion_time'],
+                'duration_ms': row['duration_ms'],
+                'processed_issues': row['processed_issues'],
+                'total_issues': row['total_issues'],
+                'total_files': row['total_files'],
+                'total_size': row['total_size']
+            })
+        
+        return scans
+    
+    def reset_scan(self, scan_id: str):
+        """Delete all data for a specific scan."""
+        cursor = self.conn.cursor()
+        
+        cursor.execute('DELETE FROM checkpoints WHERE scan_id = ?', (scan_id,))
+        cursor.execute('DELETE FROM duplicate_groups WHERE scan_id = ?', (scan_id,))
+        cursor.execute('DELETE FROM scan_stats WHERE scan_id = ?', (scan_id,))
+        cursor.execute('DELETE FROM scans WHERE scan_id = ?', (scan_id,))
+        
+        self.conn.commit()
+    
+    def reset_all_incomplete_scans(self):
+        """Delete all incomplete scans."""
+        cursor = self.conn.cursor()
+        
+        # Get all incomplete scan IDs
+        cursor.execute("SELECT scan_id FROM scans WHERE status = 'running'")
+        scan_ids = [row['scan_id'] for row in cursor.fetchall()]
+        
+        # Delete each one
+        for scan_id in scan_ids:
+            self.reset_scan(scan_id)
+    
+    def cleanup_old_scans(self, keep_days: int = 30):
+        """Delete completed scans older than specified days."""
+        cursor = self.conn.cursor()
+        
+        from datetime import timedelta
+        cutoff_date = (datetime.utcnow() - timedelta(days=keep_days)).isoformat()
+        
+        cursor.execute('''
+            SELECT scan_id FROM scans 
+            WHERE status = 'completed' AND completion_time < ?
+        ''', (cutoff_date,))
+        
+        scan_ids = [row['scan_id'] for row in cursor.fetchall()]
+        
+        for scan_id in scan_ids:
+            self.reset_scan(scan_id)
+        
+        return len(scan_ids)
+    
     def close(self):
         """Close database connection."""
         self.conn.close()
@@ -946,7 +1040,7 @@ class AttachmentScanner:
         
         return scan_state, duplicate_groups, scan_stats
     
-    def _resume_scan(self, scan_id: str) -> Tuple[dict, dict, dict]:
+    def _resume_scan(self, scan_id: str, jql: str) -> Tuple[dict, dict, dict]:
         """Resume scan from checkpoint."""
         checkpoint = self.storage.load_checkpoint(scan_id)
         
@@ -956,20 +1050,43 @@ class AttachmentScanner:
         self.logger.info(f"Loading checkpoint from {checkpoint['checkpoint_time']}")
         
         # Load scan state from database
-        # (Implementation would query scans table)
-        # For now, create minimal state
+        cursor = self.storage.conn.cursor()
+        cursor.execute('SELECT * FROM scans WHERE scan_id = ?', (scan_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise ValueError(f"Scan state not found for scan {scan_id}")
+        
         scan_state = {
             'scan_id': scan_id,
             'status': 'running',
-            'processed_issues': 0,  # Will be updated
+            'total_issues': row['total_issues'],
+            'processed_issues': row['processed_issues'],
+            'start_time': row['start_time'],
+            'jql_query': jql,
+            'config': self.config,
             'last_start_at': checkpoint['last_start_at']
         }
         
         # Load duplicate groups
         duplicate_groups = self.storage.get_duplicate_groups(scan_id)
         
-        # Initialize stats
-        scan_stats = self._initialize_stats()
+        # Load scan stats
+        cursor.execute('SELECT * FROM scan_stats WHERE scan_id = ?', (scan_id,))
+        stats_row = cursor.fetchone()
+        
+        if stats_row:
+            scan_stats = {
+                'total_files': stats_row['total_files'],
+                'total_size': stats_row['total_size'],
+                'canonical_files': stats_row['canonical_files'],
+                'duplicate_files': stats_row['duplicate_files'],
+                'duplicate_size': stats_row['duplicate_size'],
+                'project_stats': json.loads(stats_row['project_stats_json']),
+                'file_type_stats': json.loads(stats_row['file_type_stats_json'])
+            }
+        else:
+            scan_stats = self._initialize_stats()
         
         return scan_state, duplicate_groups, scan_stats
     
@@ -1238,6 +1355,15 @@ class AttachmentScanner:
 # Main Entry Point
 # ============================================================================
 
+def format_bytes(bytes_value: int) -> str:
+    """Format bytes as human-readable string."""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if bytes_value < 1024.0:
+            return f"{bytes_value:.2f} {unit}"
+        bytes_value /= 1024.0
+    return f"{bytes_value:.2f} PB"
+
+
 def main():
     """Main entry point."""
     import argparse
@@ -1248,14 +1374,31 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Start new scan
+  # Start new scan (auto-resumes if incomplete scan found)
   python jira_dc_scanner.py
   
-  # Resume interrupted scan
+  # Resume specific scan
   python jira_dc_scanner.py --resume <scan_id>
+  
+  # Reset and start fresh
+  python jira_dc_scanner.py --reset
+  
+  # Reset specific scan
+  python jira_dc_scanner.py --reset <scan_id>
+  
+  # List all scans
+  python jira_dc_scanner.py --list
+  
+  # Cleanup old completed scans (>30 days)
+  python jira_dc_scanner.py --cleanup
         '''
     )
     parser.add_argument('--resume', metavar='SCAN_ID', help='Resume scan from checkpoint')
+    parser.add_argument('--reset', nargs='?', const=True, metavar='SCAN_ID',
+                       help='Reset scan (delete checkpoint). Use without SCAN_ID to reset all incomplete scans.')
+    parser.add_argument('--list', action='store_true', help='List all scans')
+    parser.add_argument('--cleanup', type=int, nargs='?', const=30, metavar='DAYS',
+                       help='Cleanup completed scans older than DAYS (default: 30)')
     args = parser.parse_args()
     
     print("="*70)

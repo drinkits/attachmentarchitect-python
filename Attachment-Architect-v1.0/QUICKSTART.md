@@ -85,11 +85,40 @@ The HTML report will be saved in `reports/` folder. Open it in your browser!
 
 ---
 
+## 🔄 Advanced Commands
+
+### Resume Interrupted Scan
+```bash
+# Windows
+run_scan.bat --resume SCAN_ID
+
+# Linux/Mac
+./run_scan.sh --resume SCAN_ID
+```
+
+### List All Scans
+```bash
+python jira_dc_scanner.py --list
+```
+
+### Reset and Start Fresh
+```bash
+python jira_dc_scanner.py --reset
+```
+
+### Cleanup Old Scans
+```bash
+python jira_dc_scanner.py --cleanup 30
+```
+
+---
+
 ## ❓ Need Help?
 
 - **Connection fails?** Check your URL and token in `.env`
 - **Scan is slow?** Normal for large instances (100K+ issues)
-- **Want to resume?** Use `python jira_dc_scanner.py --resume SCAN_ID`
+- **Want to resume?** Scanner auto-detects incomplete scans
+- **Need to reset?** Use `python jira_dc_scanner.py --reset`
 
 See full [README.md](README.md) for detailed documentation.
 
