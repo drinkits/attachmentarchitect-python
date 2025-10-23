@@ -43,13 +43,45 @@ Preparing to migrate from Jira Data Center to Cloud? **Attachment Architect** gi
 
 ## 🚀 Quick Start
 
-### 1. **Setup Environment**
+### **Easy Mode: Use Launcher Scripts** ⭐ **RECOMMENDED**
+
+**Windows users** - Just double-click or run these BAT files:
+
+```cmd
+1. setup.bat              # One-time setup
+2. Edit .env              # Add your Jira credentials
+3. test_connection.bat    # Verify connection
+4. run_scan.bat           # Run the scan
+```
+
+**Linux/Mac users** - Run these SH files:
 
 ```bash
-# Windows
-setup.bat
+1. ./setup.sh             # One-time setup
+2. Edit .env              # Add your Jira credentials
+3. ./test_connection.sh   # Verify connection
+4. ./run_scan.sh          # Run the scan
+```
 
-# Linux/Mac
+**✨ Benefits of using launcher scripts:**
+- ✅ **No manual virtual environment activation** - Scripts handle it automatically
+- ✅ **Error checking** - Validates setup before running
+- ✅ **Clear messages** - Shows what's happening at each step
+- ✅ **Resume support** - Use `run_scan.bat --resume SCAN_ID` to continue interrupted scans
+
+---
+
+### **Detailed Setup Steps**
+
+#### 1. **Setup Environment**
+
+**Windows:**
+```cmd
+setup.bat
+```
+
+**Linux/Mac:**
+```bash
 chmod +x setup.sh
 ./setup.sh
 ```
@@ -60,15 +92,9 @@ This automatically:
 - Creates `.env` from template
 - Creates necessary folders
 
-### 2. **Configure Credentials**
+#### 2. **Configure Credentials**
 
-Copy the example environment file and edit it:
-
-```bash
-copy .env.example .env
-```
-
-Edit `.env` with your Jira credentials:
+Edit the `.env` file with your Jira credentials:
 
 ```env
 # Jira Connection
@@ -82,8 +108,19 @@ JIRA_TOKEN=your_personal_access_token_here
 
 **💡 Tip**: Personal Access Tokens are recommended for Jira DC 8.14+
 
-### 3. **Test Connection**
+#### 3. **Test Connection**
 
+**Windows:**
+```cmd
+test_connection.bat
+```
+
+**Linux/Mac:**
+```bash
+./test_connection.sh
+```
+
+**Or manually:**
 ```bash
 python test_connection.py
 ```
@@ -95,8 +132,19 @@ Expected output:
 ✓ Authentication working
 ```
 
-### 4. **Run Scan**
+#### 4. **Run Scan**
 
+**Windows:**
+```cmd
+run_scan.bat
+```
+
+**Linux/Mac:**
+```bash
+./run_scan.sh
+```
+
+**Or manually:**
 ```bash
 python jira_dc_scanner.py
 ```
@@ -109,11 +157,32 @@ The scanner will:
 5. 📈 **Automatically generate HTML visual report**
 6. 🎉 Display summary and report path
 
-### 5. **View Report**
+#### 5. **View Report**
 
 Open the generated HTML file in your browser:
 ```
 ./reports/scan_XXXXXXXX_visual_analysis.html
+```
+
+---
+
+### **Advanced: Resume Interrupted Scans**
+
+If your scan is interrupted, you can easily resume:
+
+**Windows:**
+```cmd
+run_scan.bat --resume SCAN_ID
+```
+
+**Linux/Mac:**
+```bash
+./run_scan.sh --resume SCAN_ID
+```
+
+**Or manually:**
+```bash
+python jira_dc_scanner.py --resume SCAN_ID
 ```
 
 ---

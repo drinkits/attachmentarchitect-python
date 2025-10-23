@@ -1,37 +1,74 @@
 # ⚡ Quick Start Guide
 
-**Get started in 5 minutes!**
+**Get started in 5 minutes using our easy launcher scripts!**
 
 ---
 
-## Windows Users
+## 🪟 Windows Users - Super Easy!
 
-### 1. Run Setup
+### **Just 4 Simple Steps:**
+
+#### 1️⃣ **Run Setup** (One-time only)
+Double-click `setup.bat` or run in Command Prompt:
 ```cmd
 setup.bat
 ```
+✅ Creates virtual environment  
+✅ Installs all dependencies  
+✅ Creates `.env` file  
+✅ Sets up folders  
 
-### 2. Edit Credentials
+#### 2️⃣ **Edit Credentials**
 Open `.env` in Notepad and add your Jira details:
 ```
 JIRA_BASE_URL=https://your-jira.com
 JIRA_TOKEN=your_token_here
 ```
 
-### 3. Test Connection
+#### 3️⃣ **Test Connection**
+Double-click `test_connection.bat` or run:
 ```cmd
 test_connection.bat
 ```
+✅ Verifies your credentials  
+✅ Tests Jira connection  
+✅ Shows your user info  
 
-### 4. Run Scan
+#### 4️⃣ **Run Scan**
+Double-click `run_scan.bat` or run:
 ```cmd
 run_scan.bat
 ```
+✅ Scans all attachments  
+✅ Generates HTML report  
+✅ Shows summary  
 
-**Note**: The `.bat` scripts automatically activate the virtual environment for you!
+#### 5️⃣ **View Report**
+The HTML report will be saved in `reports\` folder. Just double-click to open it in your browser!
 
-### 5. Open Report
-The HTML report will be saved in `reports\` folder. Open it in your browser!
+---
+
+### **✨ Why Use BAT Scripts?**
+
+- 🚀 **No Python knowledge needed** - Just double-click!
+- ✅ **Automatic virtual environment** - No manual activation required
+- 🔍 **Error checking** - Scripts validate everything before running
+- 💬 **Clear messages** - See exactly what's happening
+- 🔄 **Resume support** - Easy to continue interrupted scans
+
+---
+
+### **Advanced: Resume Interrupted Scan**
+
+If your scan was interrupted, just run:
+```cmd
+run_scan.bat --resume SCAN_ID
+```
+
+Example:
+```cmd
+run_scan.bat --resume 9f7629d1
+```
 
 ---
 
