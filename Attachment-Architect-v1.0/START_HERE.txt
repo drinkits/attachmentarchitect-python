@@ -1,0 +1,43 @@
+=== ATTACHMENT ARCHITECT v1.0 ===
+
+Welcome! Get started in 3 simple steps:
+
+STEP 1: Run Setup Script
+   Windows: setup.bat
+   Linux/Mac: ./setup.sh
+
+STEP 2: Edit .env File
+   Add your Jira URL and credentials
+
+STEP 3: Run Scanner
+   python jira_dc_scanner.py
+
+The scanner will automatically generate an HTML report!
+
+---
+
+NEED HELP?
+- Quick start: See QUICKSTART.md (5 minutes)
+- Full guide: See README.md
+- Troubleshooting: See README.md section
+
+---
+
+WHAT YOU GET:
+✓ Interactive HTML report with 6 analysis tabs
+✓ Duplicate detection and storage waste analysis
+✓ "Frozen Dinosaurs" - large files on inactive issues
+✓ Sortable, searchable tables
+✓ Professional insights and recommendations
+
+---
+
+SUPPORT:
+If you encounter issues:
+1. Check QUICKSTART.md troubleshooting section
+2. Review logs in ./logs/scanner.log
+3. Verify .env credentials are correct
+
+---
+
+Version 1.0.0 - Production Ready

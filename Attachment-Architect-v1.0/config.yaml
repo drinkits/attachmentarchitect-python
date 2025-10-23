@@ -1,0 +1,42 @@
+# Jira Data Center Attachment Analysis Tool - Configuration
+
+jira:
+  # Base URL will be loaded from environment variable JIRA_BASE_URL
+  verify_ssl: true
+  api_version: 2  # Jira Data Center uses API v2
+
+scan:
+  batch_size: 100  # Issues to fetch per API call
+  thread_pool_size: 12  # Parallel download workers
+  max_file_size_gb: 5  # Skip files larger than this
+  download_timeout_seconds: 300  # 5 minutes per file
+  rate_limit_per_second: 50  # API requests per second
+  use_content_hash: true  # Hash actual file content (vs URL)
+  
+storage:
+  database_path: "./scans/scan.db"
+  checkpoint_interval: 100  # Save progress every N issues
+  
+output:
+  formats:
+    - json
+    - csv
+    - excel
+    - html
+  output_dir: "./reports"
+  
+filters:
+  # Custom JQL query (overrides all other filters if set)
+  custom_jql:  # e.g., "project = MYPROJ AND created >= -30d"
+  
+  # Standard filters (used if custom_jql is not set)
+  projects: []  # e.g., ["PROJ", "TEST"]
+  date_from: null  # e.g., "2023-01-01"
+  date_to: null  # e.g., "2024-12-31"
+  file_types: []  # e.g., ["pdf", "png", "jpg"]
+  min_file_size_mb: 0  # Minimum file size to include
+  
+logging:
+  level: INFO  # DEBUG, INFO, WARNING, ERROR
+  file: "./logs/scanner.log"
+  console: true
