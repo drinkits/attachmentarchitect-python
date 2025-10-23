@@ -9,10 +9,18 @@ STEP 1: Run Setup Script
 STEP 2: Edit .env File
    Add your Jira URL and credentials
 
-STEP 3: Run Scanner
-   python jira_dc_scanner.py
+STEP 3: Test Connection (Optional)
+   Windows: test_connection.bat
+   Linux/Mac: ./test_connection.sh
+
+STEP 4: Run Scanner
+   Windows: run_scan.bat
+   Linux/Mac: ./run_scan.sh
 
 The scanner will automatically generate an HTML report!
+
+NOTE: The launcher scripts automatically activate the virtual 
+environment, so you don't need to do it manually!
 
 ---
 

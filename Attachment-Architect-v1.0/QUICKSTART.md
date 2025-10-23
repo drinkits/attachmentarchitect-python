@@ -20,14 +20,15 @@ JIRA_TOKEN=your_token_here
 
 ### 3. Test Connection
 ```cmd
-venv\Scripts\activate
-python test_connection.py
+test_connection.bat
 ```
 
 ### 4. Run Scan
 ```cmd
-python jira_dc_scanner.py
+run_scan.bat
 ```
+
+**Note**: The `.bat` scripts automatically activate the virtual environment for you!
 
 ### 5. Open Report
 The HTML report will be saved in `reports\` folder. Open it in your browser!
@@ -54,14 +55,17 @@ JIRA_TOKEN=your_token_here
 
 ### 3. Test Connection
 ```bash
-source venv/bin/activate
-python test_connection.py
+chmod +x test_connection.sh
+./test_connection.sh
 ```
 
 ### 4. Run Scan
 ```bash
-python jira_dc_scanner.py
+chmod +x run_scan.sh
+./run_scan.sh
 ```
+
+**Note**: The `.sh` scripts automatically activate the virtual environment for you!
 
 ### 5. Open Report
 The HTML report will be saved in `reports/` folder. Open it in your browser!
