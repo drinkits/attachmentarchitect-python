@@ -29,8 +29,7 @@ from dotenv import load_dotenv
 
 # Suppress urllib3 warnings for malformed headers (common in some Jira instances)
 import warnings
-from urllib3.exceptions import HeaderParsingError
-warnings.filterwarnings('ignore', category=HeaderParsingError)
+warnings.filterwarnings('ignore', message='.*Failed to parse headers.*')
 
 
 # ============================================================================
@@ -1545,6 +1544,17 @@ Examples:
             print(f"   {os.path.abspath(html_path)}")
         except Exception as e:
             print(f"⚠ Warning: Could not generate visual report: {e}")
+        
+        # Generate CSV exports
+        print("\nGenerating CSV exports...")
+        try:
+            from generate_csv_export import export_all_csv
+            csv_files = export_all_csv(results, output_dir)
+            print(f"✓ Generated {len(csv_files)} CSV files:")
+            for csv_file in csv_files:
+                print(f"  - {os.path.basename(csv_file)}")
+        except Exception as e:
+            print(f"⚠ Warning: Could not generate CSV exports: {e}")
         
         # Close storage
         storage_manager.close()

@@ -252,40 +252,115 @@ python generate_visual_analysis_report.py scan_9f7629d1.json --min-size 5 --min-
 
 ---
 
-## 📊 Visual Report Features
+## 📊 Output Formats
 
+The scanner generates **3 types of reports** after each scan:
+
+### 1. 📄 **JSON Export** (Raw Data)
+- Complete scan results in JSON format
+- File: `scan_XXXXXXXX.json`
+- Use for custom analysis or integration
+
+### 2. 🌐 **HTML Visual Report** (Interactive)
 The HTML report includes **6 interactive tabs**:
 
-### 1. 📊 **By Project**
+#### 📊 **By Project**
 - Storage consumption per project
 - File counts and average sizes
 - Color-coded by file size
 
-### 2. 🔍 **By File Type**
+#### 🔍 **By File Type**
 - Top file types by storage
 - File counts per extension
 - Identify storage-heavy formats
 
-### 3. 👥 **By User**
+#### 👥 **By User**
 - Top 10 storage consumers
 - Format: `Name Surname (username)`
 - Files uploaded per user
 
-### 4. 📅 **By Age**
+#### 📅 **By Age**
 - Attachment age distribution
 - Buckets: 0-90 days, 90-365 days, 1-2 years, 2-4 years, >4 years
 - Identify archival candidates
 
-### 5. 📋 **By Status**
+#### 📋 **By Status**
 - Storage by issue status
 - Format: `Status Name (ID: X)` *(when available)*
 - Find storage in closed/resolved issues
 
-### 6. 🔥 **Heat Index**
+#### 🔥 **Heat Index**
 - **"Frozen Dinosaurs"**: Large files on inactive issues
 - **Sortable table**: Click any column header to sort
 - **Search & filter**: Find specific files
 - **Pagination**: Browse all files efficiently
+
+### 3. 📊 **CSV Exports** (10 Files for Excel/Analysis)
+
+The scanner automatically generates **10 comprehensive CSV files**:
+
+#### Core Reports
+1. **`scan_XXXXXXXX_summary.csv`**
+   - Overall scan statistics
+   - Total files, storage, duplicates
+   - Waste percentage
+
+2. **`scan_XXXXXXXX_duplicates.csv`**
+   - List of all duplicate files
+   - Sorted by wasted space
+   - Includes file hash, size, duplicate count
+
+3. **`scan_XXXXXXXX_duplicate_locations.csv`**
+   - Detailed locations of each duplicate
+   - Issue key, project, attachment ID
+   - Canonical vs duplicate flag
+
+4. **`scan_XXXXXXXX_projects.csv`**
+   - Per-project statistics
+   - Total storage, duplicate storage
+   - Waste percentage per project
+
+5. **`scan_XXXXXXXX_file_types.csv`**
+   - Per-file-type statistics
+   - File count, total storage
+   - Average file size per type
+
+6. **`scan_XXXXXXXX_quick_wins.csv`**
+   - Top cleanup opportunities
+   - Ranked by potential savings
+   - Actionable recommendations
+
+#### Analysis Reports
+7. **`scan_XXXXXXXX_users.csv`** 👥
+   - Per-user storage statistics
+   - Total files, canonical vs duplicates
+   - Average file size per user
+   - Sorted by total storage
+
+8. **`scan_XXXXXXXX_age_distribution.csv`** 📅
+   - File age distribution
+   - 5 age buckets (0-90d, 90-365d, 1-2y, 2-4y, >4y)
+   - Percentage of files and storage per bucket
+
+9. **`scan_XXXXXXXX_status_distribution.csv`** 📋
+   - Storage by issue status
+   - File count and storage per status
+   - Percentage distribution
+   - Sorted by total storage
+
+10. **`scan_XXXXXXXX_heat_index.csv`** 🔥
+    - Complete heat index analysis
+    - All files with heat scores
+    - Days inactive, file size in MB
+    - "Frozen Dinosaur" flag (>10MB, >180 days inactive)
+    - Sorted by heat score (highest priority first)
+
+**💡 CSV Benefits:**
+- ✅ Open in Excel, Google Sheets, or any spreadsheet tool
+- ✅ Filter, sort, and pivot data as needed
+- ✅ Create custom charts and dashboards
+- ✅ Share with stakeholders in familiar format
+- ✅ Import into BI tools for advanced analysis
 
 ---
 

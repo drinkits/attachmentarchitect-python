@@ -33,10 +33,27 @@ NEED HELP?
 
 WHAT YOU GET:
 ✓ Interactive HTML report with 6 analysis tabs
+✓ 10 comprehensive CSV files for Excel/analysis
 ✓ Duplicate detection and storage waste analysis
 ✓ "Frozen Dinosaurs" - large files on inactive issues
 ✓ Sortable, searchable tables
 ✓ Professional insights and recommendations
+
+OUTPUT FILES (automatically generated):
+1. JSON Export - Raw data (scan_XXXXXXXX.json)
+2. HTML Report - Interactive visual analysis
+3. CSV Exports (10 files):
+   - Summary, Duplicates, Duplicate Locations
+   - Projects, File Types, Quick Wins
+   - Users, Age Distribution, Status Distribution
+   - Heat Index (complete analysis)
+
+CSV FILES PERFECT FOR:
+✓ Excel/Google Sheets analysis
+✓ Custom charts and dashboards
+✓ Stakeholder presentations
+✓ BI tool integration
+✓ Filtering and pivot tables
 
 ---
 
