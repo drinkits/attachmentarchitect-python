@@ -483,21 +483,32 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
     <!-- Footer with Call-to-Action -->
     <footer style="margin-top: 50px; padding: 40px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <div style="max-width: 900px; margin: 0 auto; text-align: center;">
-            <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">Ready for the Cloud?</h2>
+            <h2 style="font-size: 32px; margin-bottom: 15px; color: white;">From a One-Time Snapshot to a Live Command Center</h2>
             
             <p style="font-size: 18px; line-height: 1.8; margin-bottom: 25px; opacity: 0.95;">
-                This report was generated using our <strong>free Data Center scanner</strong>. 
-                It provides a powerful <strong>one-time snapshot</strong> of your storage. 
-                But what happens after you migrate to Cloud?
+                This free report has given you a powerful <strong>one-time snapshot</strong> of your Data Center instance. 
+                It's the perfect starting point for your cleanup and migration plan.
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.7; margin-bottom: 30px; opacity: 0.9;">
+                But what happens after you migrate to the Cloud? You need a way to <em>keep</em> it clean.
             </p>
             
             <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 8px; margin-bottom: 30px; backdrop-filter: blur(10px);">
                 <h3 style="font-size: 24px; margin-bottom: 15px; color: white;">
                     🚀 Attachment Architect for Jira Cloud
                 </h3>
-                <p style="font-size: 16px; line-height: 1.7; margin-bottom: 0;">
-                    Get this same level of insight and <strong>much more</strong>, with a <strong>live, continuous dashboard</strong>. 
-                    Automate your cleanup, set governance policies, and keep your new Cloud instance clean from Day 1.
+                <p style="font-size: 16px; line-height: 1.7; margin-bottom: 15px;">
+                    Get this same level of deep insight and much more with a <strong>live, continuous dashboard</strong>. 
+                    Instead of a static report, get a real-time command center that helps you:
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; text-align: left; max-width: 700px; margin: 20px auto 0; font-size: 15px;">
+                    <div>📊 <strong>Visualize</strong> your entire attachment library with interactive charts</div>
+                    <div>🔍 <strong>Investigate</strong> every duplicate with detailed, drill-down views</div>
+                    <div>🧹 <strong>Clean Up</strong> safely with our secure, multi-step bulk deletion workflow</div>
+                </div>
+                <p style="font-size: 15px; margin-top: 20px; opacity: 0.95;">
+                    Keep your new Cloud instance clean from Day 1.
                 </p>
             </div>
             
@@ -509,27 +520,19 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
                    target="_blank">
                     📦 View on Atlassian Marketplace
                 </a>
-                
-                <a href="https://dev.drinkits.lv/" 
-                   style="display: inline-block; padding: 15px 35px; background-color: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; border: 2px solid white; transition: background 0.2s;"
-                   onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                   onmouseout="this.style.background='rgba(255,255,255,0.2)'"
-                   target="_blank">
-                    🌐 Learn More
-                </a>
             </div>
             
             <div style="font-size: 14px; opacity: 0.9; margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.3);">
                 <p style="margin-bottom: 10px;">
-                    <strong>Why Continuous Monitoring Matters:</strong>
+                    <strong>Why a Live Dashboard Matters:</strong>
                 </p>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: left; max-width: 800px; margin: 15px auto 0;">
-                    <div>✅ Real-time duplicate detection</div>
-                    <div>✅ Automated cleanup workflows</div>
-                    <div>✅ Storage governance policies</div>
-                    <div>✅ Cost optimization alerts</div>
-                    <div>✅ Compliance reporting</div>
-                    <div>✅ Multi-step safe deletion</div>
+                    <div>✅ <strong>Always Up-to-Date Insights</strong></div>
+                    <div>✅ <strong>Interactive Data Visualization</strong></div>
+                    <div>✅ <strong>Multi-Step Safe Deletion</strong></div>
+                    <div>✅ <strong>Comprehensive Audit Log</strong></div>
+                    <div>✅ <strong>Prioritized "Quick Wins"</strong></div>
+                    <div>✅ <strong>"Frozen Dinosaur" Analysis</strong></div>
                 </div>
             </div>
         </div>
@@ -556,7 +559,7 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
             
             <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 15px;">
                 Report generated by <strong>Attachment Architect</strong> | 
-                <a href="https://dev.drinkits.lv/" style="color: #3498db; text-decoration: none;" target="_blank">Download Scanner</a> | 
+                <a href="https://github.com/drinkits/attachmentarchitect-python/releases" style="color: #3498db; text-decoration: none;" target="_blank">Download Scanner</a> | 
                 <a href="mailto:support@drinkits.lv" style="color: #3498db; text-decoration: none;">Contact Support</a>
             </p>
             <p style="color: #95a5a6; font-size: 12px;">

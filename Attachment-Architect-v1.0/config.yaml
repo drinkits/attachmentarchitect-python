@@ -7,11 +7,13 @@ jira:
 
 scan:
   batch_size: 100  # Issues to fetch per API call
-  thread_pool_size: 12  # Parallel download workers
+  thread_pool_size: 12  # Parallel download workers (only used if use_content_hash=true)
   max_file_size_gb: 5  # Skip files larger than this
   download_timeout_seconds: 300  # 5 minutes per file
   rate_limit_per_second: 50  # API requests per second
-  use_content_hash: true  # Hash actual file content (vs URL)
+  use_content_hash: false  # RECOMMENDED: false for speed, true for accuracy
+  # false = URL-based hash (100x faster, no download errors, good for large instances)
+  # true = Content-based hash (slower, more accurate, detects renamed duplicates)
   
 storage:
   database_path: "./scans/scan.db"

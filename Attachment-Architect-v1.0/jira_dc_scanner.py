@@ -27,6 +27,11 @@ from tqdm import tqdm
 import yaml
 from dotenv import load_dotenv
 
+# Suppress urllib3 warnings for malformed headers (common in some Jira instances)
+import warnings
+from urllib3.exceptions import HeaderParsingError
+warnings.filterwarnings('ignore', category=HeaderParsingError)
+
 
 # ============================================================================
 # Configuration and Setup
