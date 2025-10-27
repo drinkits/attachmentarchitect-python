@@ -32,7 +32,44 @@ source venv/bin/activate
 
 echo "[2/2] Starting scan..."
 echo ""
-python jira_dc_scanner.py "$@"
+
+# Check for incomplete scans and auto-resume
+RESUME_SCAN_ID=$(python -c "import sqlite3, os; db='scans/scan.db'; print(sqlite3.connect(db).execute('SELECT scan_id FROM scans WHERE status=\"running\" ORDER BY start_time DESC LIMIT 1').fetchone()[0] if os.path.exists(db) else '')" 2>/dev/null)
+
+if [ ! -z "$RESUME_SCAN_ID" ]; then
+    echo ""
+    echo "========================================"
+    echo "INCOMPLETE SCAN DETECTED"
+    echo "========================================"
+    echo "Scan ID: $RESUME_SCAN_ID"
+    echo ""
+    echo "An interrupted scan was found. Would you like to:"
+    echo "  [R] Resume the interrupted scan"
+    echo "  [N] Start a new scan (previous scan will remain in database)"
+    echo "  [D] Delete the interrupted scan and start fresh"
+    echo ""
+    read -p "Your choice (R/N/D): " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Dd]$ ]]; then
+        echo ""
+        echo "Deleting interrupted scan..."
+        python jira_dc_scanner.py --reset "$RESUME_SCAN_ID"
+        echo ""
+        echo "Starting new scan..."
+        python jira_dc_scanner.py "$@"
+    elif [[ $REPLY =~ ^[Nn]$ ]]; then
+        echo ""
+        echo "Starting new scan..."
+        python jira_dc_scanner.py "$@"
+    else
+        echo ""
+        echo "Resuming scan $RESUME_SCAN_ID..."
+        python jira_dc_scanner.py --resume "$RESUME_SCAN_ID" "$@"
+    fi
+else
+    python jira_dc_scanner.py "$@"
+fi
 
 echo ""
 echo "========================================"

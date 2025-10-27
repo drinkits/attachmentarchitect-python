@@ -15,7 +15,7 @@ import sqlite3
 import os
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional, Tuple, Set
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -524,7 +524,7 @@ class StorageManager:
             last_issue_key,
             last_start_at,
             json.dumps(list(processed_attachment_ids)),
-            datetime.utcnow().isoformat()
+            datetime.now(timezone.utc).isoformat()
         ))
         
         self.conn.commit()
@@ -657,8 +657,7 @@ class StorageManager:
         """Delete completed scans older than specified days."""
         cursor = self.conn.cursor()
         
-        from datetime import timedelta
-        cutoff_date = (datetime.utcnow() - timedelta(days=keep_days)).isoformat()
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=keep_days)).isoformat()
         
         cursor.execute('''
             SELECT scan_id FROM scans 
@@ -913,7 +912,7 @@ class AttachmentScanner:
         
         # Initialize or resume scan
         if resume and scan_id:
-            scan_state, duplicate_groups, scan_stats = self._resume_scan(scan_id)
+            scan_state, duplicate_groups, scan_stats = self._resume_scan(scan_id, jql)
         else:
             scan_state, duplicate_groups, scan_stats = self._initialize_scan(jql)
         
@@ -1026,7 +1025,7 @@ class AttachmentScanner:
             'status': 'running',
             'total_issues': total_issues,
             'processed_issues': 0,
-            'start_time': datetime.utcnow().isoformat(),
+            'start_time': datetime.now(timezone.utc).isoformat(),
             'jql_query': jql,
             'config': self.config,
             'last_start_at': 0
@@ -1042,13 +1041,6 @@ class AttachmentScanner:
     
     def _resume_scan(self, scan_id: str, jql: str) -> Tuple[dict, dict, dict]:
         """Resume scan from checkpoint."""
-        checkpoint = self.storage.load_checkpoint(scan_id)
-        
-        if not checkpoint:
-            raise ValueError(f"No checkpoint found for scan {scan_id}")
-        
-        self.logger.info(f"Loading checkpoint from {checkpoint['checkpoint_time']}")
-        
         # Load scan state from database
         cursor = self.storage.conn.cursor()
         cursor.execute('SELECT * FROM scans WHERE scan_id = ?', (scan_id,))
@@ -1056,6 +1048,17 @@ class AttachmentScanner:
         
         if not row:
             raise ValueError(f"Scan state not found for scan {scan_id}")
+        
+        # Try to load checkpoint (may not exist if scan was interrupted early)
+        checkpoint = self.storage.load_checkpoint(scan_id)
+        
+        if checkpoint:
+            self.logger.info(f"Loading checkpoint from {checkpoint['checkpoint_time']}")
+            last_start_at = checkpoint['last_start_at']
+        else:
+            self.logger.warning(f"No checkpoint found for scan {scan_id}, resuming from scan state")
+            # Resume from where processed_issues indicates
+            last_start_at = row['processed_issues']
         
         scan_state = {
             'scan_id': scan_id,
@@ -1065,13 +1068,13 @@ class AttachmentScanner:
             'start_time': row['start_time'],
             'jql_query': jql,
             'config': self.config,
-            'last_start_at': checkpoint['last_start_at']
+            'last_start_at': last_start_at
         }
         
-        # Load duplicate groups
+        # Load duplicate groups (may be empty if no checkpoint)
         duplicate_groups = self.storage.get_duplicate_groups(scan_id)
         
-        # Load scan stats
+        # Load scan stats (may not exist if no checkpoint)
         cursor.execute('SELECT * FROM scan_stats WHERE scan_id = ?', (scan_id,))
         stats_row = cursor.fetchone()
         
@@ -1086,6 +1089,7 @@ class AttachmentScanner:
                 'file_type_stats': json.loads(stats_row['file_type_stats_json'])
             }
         else:
+            self.logger.warning("No scan stats found, starting fresh")
             scan_stats = self._initialize_stats()
         
         return scan_state, duplicate_groups, scan_stats
@@ -1256,14 +1260,33 @@ class AttachmentScanner:
     
     def _save_progress(self, scan_state: dict, scan_stats: dict, duplicate_groups: dict):
         """Save current progress."""
+        scan_id = scan_state['scan_id']
+        
+        # Save scan state
         self.storage.save_scan_state(scan_state)
-        self.storage.save_scan_stats(scan_state['scan_id'], scan_stats)
-        self.storage.save_duplicate_groups(scan_state['scan_id'], duplicate_groups)
+        
+        # Save statistics
+        self.storage.save_scan_stats(scan_id, scan_stats)
+        
+        # Save duplicate groups
+        self.storage.save_duplicate_groups(scan_id, duplicate_groups)
+        
+        # Save checkpoint for resume capability
+        last_issue_key = scan_state.get('last_issue_key', '')
+        last_start_at = scan_state.get('last_start_at', 0)
+        processed_attachment_ids = set()  # We don't track individual attachments currently
+        
+        self.storage.save_checkpoint(
+            scan_id,
+            last_issue_key,
+            last_start_at,
+            processed_attachment_ids
+        )
     
     def _finalize_scan(self, scan_state: dict, scan_stats: dict, 
                       duplicate_groups: dict) -> dict:
         """Finalize scan and calculate insights."""
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = datetime.fromisoformat(scan_state['start_time'])
         duration_ms = int((end_time - start_time).total_seconds() * 1000)
         
@@ -1416,7 +1439,56 @@ Examples:
         logger = setup_logging(config)
         logger.info("Starting Jira Data Center Attachment Scanner")
         
-        # Initialize components
+        # Initialize storage (needed for --list, --reset, --cleanup commands)
+        db_path = config.get('storage', {}).get('database_path', './scans/scan.db')
+        storage_manager = StorageManager(db_path)
+        
+        # Handle --list command
+        if args.list:
+            print("\n" + "="*70)
+            print("ALL SCANS")
+            print("="*70)
+            scans = storage_manager.list_all_scans()
+            if not scans:
+                print("No scans found.")
+            else:
+                for scan in scans:
+                    print(f"\nScan ID: {scan['scan_id']}")
+                    print(f"  Status: {scan['status']}")
+                    print(f"  Started: {scan['start_time']}")
+                    if scan['completion_time']:
+                        print(f"  Completed: {scan['completion_time']}")
+                        print(f"  Duration: {scan['duration_ms']/1000:.1f}s")
+                    print(f"  Progress: {scan['processed_issues']}/{scan['total_issues']} issues")
+                    if scan['total_files']:
+                        print(f"  Files: {scan['total_files']:,} ({format_bytes(scan['total_size'])})")
+            storage_manager.close()
+            return 0
+        
+        # Handle --cleanup command
+        if args.cleanup:
+            print(f"\nCleaning up scans older than {args.cleanup} days...")
+            deleted_count = storage_manager.cleanup_old_scans(args.cleanup)
+            print(f"✓ Deleted {deleted_count} old scan(s)")
+            storage_manager.close()
+            return 0
+        
+        # Handle --reset command
+        if args.reset:
+            if args.reset is True:
+                # Reset all incomplete scans
+                print("\nResetting all incomplete scans...")
+                storage_manager.reset_all_incomplete_scans()
+                print("✓ All incomplete scans have been reset")
+            else:
+                # Reset specific scan
+                print(f"\nResetting scan {args.reset}...")
+                storage_manager.reset_scan(args.reset)
+                print(f"✓ Scan {args.reset} has been reset")
+            storage_manager.close()
+            return 0
+        
+        # Initialize components for actual scanning
         print("Connecting to Jira...")
         jira_client = JiraDataCenterClient(
             base_url=config['jira']['base_url'],
@@ -1430,13 +1502,10 @@ Examples:
         # Test connection
         if not jira_client.test_connection():
             print("ERROR: Failed to connect to Jira. Check your credentials.")
+            storage_manager.close()
             return 1
         
         print("✓ Connected successfully")
-        
-        # Initialize storage
-        db_path = config.get('storage', {}).get('database_path', './scans/scan.db')
-        storage_manager = StorageManager(db_path)
         
         # Initialize scanner
         scanner = AttachmentScanner(jira_client, storage_manager, config)

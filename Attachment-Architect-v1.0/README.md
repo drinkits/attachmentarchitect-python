@@ -166,32 +166,26 @@ Open the generated HTML file in your browser:
 
 ---
 
-### **Advanced: Resume Interrupted Scans**
+### **Advanced: Resume Interrupted Scans** 🔄
 
-If your scan is interrupted, you can easily resume:
+The scanner includes **automatic resume detection**! If a scan is interrupted:
+
+**Option 1: Automatic Detection (Recommended)**
+
+Simply run the scan script again:
 
 **Windows:**
 ```cmd
-run_scan.bat --resume SCAN_ID
+run_scan.bat
 ```
 
 **Linux/Mac:**
 ```bash
-./run_scan.sh --resume SCAN_ID
+./run_scan.sh
 ```
 
-**Or manually:**
-```bash
-python jira_dc_scanner.py --resume SCAN_ID
+You'll be prompted:
 ```
-
----
-
-## 📖 Detailed Usage
-
-### Configuration Options
-
-Edit `config.yaml` to customize scan behavior:
 
 ```yaml
 jira:
