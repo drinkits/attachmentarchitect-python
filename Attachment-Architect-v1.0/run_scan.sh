@@ -34,9 +34,14 @@ echo "[2/2] Starting scan..."
 echo ""
 
 # Check for incomplete scans and auto-resume
-RESUME_SCAN_ID=$(python -c "import sqlite3, os; db='scans/scan.db'; print(sqlite3.connect(db).execute('SELECT scan_id FROM scans WHERE status=\"running\" ORDER BY start_time DESC LIMIT 1').fetchone()[0] if os.path.exists(db) else '')" 2>/dev/null)
+RESUME_SCAN_ID=""
+if [ -f "scans/scan.db" ]; then
+    RESUME_SCAN_ID=$(python -c "import sqlite3; conn=sqlite3.connect('scans/scan.db'); cur=conn.cursor(); cur.execute('SELECT scan_id FROM scans WHERE status=\"running\" ORDER BY start_time DESC LIMIT 1'); row=cur.fetchone(); print(row[0] if row else '')" 2>/dev/null)
+    # Trim whitespace
+    RESUME_SCAN_ID=$(echo "$RESUME_SCAN_ID" | xargs)
+fi
 
-if [ ! -z "$RESUME_SCAN_ID" ]; then
+if [ -n "$RESUME_SCAN_ID" ] && [ "$RESUME_SCAN_ID" != "" ]; then
     echo ""
     echo "========================================"
     echo "INCOMPLETE SCAN DETECTED"
