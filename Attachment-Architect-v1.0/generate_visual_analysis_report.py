@@ -22,10 +22,10 @@ def format_bytes(bytes_value):
     return f"{bytes_value:.2f} PB"
 
 
-def fetch_active_users_from_jira():
+def get_jira_session():
     """
-    Fetch list of active users from Jira.
-    Returns set of active user IDs.
+    Create and return a Jira session with credentials.
+    Returns tuple of (session, base_url) or (None, None) if credentials not available.
     """
     try:
         import os
@@ -37,7 +37,6 @@ def fetch_active_users_from_jira():
             from dotenv import load_dotenv
             load_dotenv()
         except ImportError:
-            # dotenv not available, will use environment variables directly
             pass
         
         # Load credentials from environment
@@ -47,8 +46,7 @@ def fetch_active_users_from_jira():
         password = os.getenv('JIRA_PASSWORD')
         
         if not base_url:
-            print("⚠ Warning: JIRA_BASE_URL not set. Cannot fetch active users.")
-            return None
+            return None, None
         
         # Create session
         session = requests.Session()
@@ -58,17 +56,31 @@ def fetch_active_users_from_jira():
         elif username and password:
             session.auth = HTTPBasicAuth(username, password)
         else:
-            print("⚠ Warning: No Jira credentials found. Cannot fetch active users.")
-            return None
+            return None, None
         
         session.headers.update({
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         })
         
+        return session, base_url
+        
+    except Exception as e:
+        print(f"⚠ Warning: Could not create Jira session: {e}")
+        return None, None
+
+
+def fetch_active_users_from_jira():
+    """Fetch list of active users from Jira."""
+    try:
+        session, base_url = get_jira_session()
+        
+        if not session or not base_url:
+            print("⚠ Warning: Cannot fetch active users - no Jira credentials.")
+            return None
+        
         print("📡 Fetching active users from Jira...")
         
-        # Fetch all active users (paginated)
         active_users = set()
         start_at = 0
         max_results = 1000
@@ -76,7 +88,7 @@ def fetch_active_users_from_jira():
         while True:
             url = f"{base_url}/rest/api/2/user/search"
             params = {
-                'username': '.',  # Search for all users
+                'username': '.',
                 'startAt': start_at,
                 'maxResults': max_results,
                 'includeActive': True,
@@ -92,7 +104,6 @@ def fetch_active_users_from_jira():
                     break
                 
                 for user in users:
-                    # Get user identifier (key or name)
                     user_id = user.get('key') or user.get('name') or user.get('accountId')
                     if user_id:
                         active_users.add(user_id)
@@ -104,7 +115,7 @@ def fetch_active_users_from_jira():
                 
                 start_at += max_results
                 
-            except requests.exceptions.RequestException as e:
+            except Exception as e:
                 print(f"⚠ Warning: Failed to fetch users: {e}")
                 break
         
@@ -113,6 +124,53 @@ def fetch_active_users_from_jira():
         
     except Exception as e:
         print(f"⚠ Warning: Could not fetch active users: {e}")
+        return None
+
+
+def fetch_archived_projects_from_jira():
+    """
+    Fetch list of archived projects from Jira.
+    Returns dict mapping project key to project info.
+    """
+    try:
+        session, base_url = get_jira_session()
+        
+        if not session or not base_url:
+            print("⚠ Warning: Cannot fetch archived projects - no Jira credentials.")
+            return None
+        
+        print("📡 Fetching projects from Jira...")
+        
+        url = f"{base_url}/rest/api/2/project"
+        
+        try:
+            response = session.get(url, timeout=30)
+            response.raise_for_status()
+            projects = response.json()
+            
+            archived_projects = {}
+            
+            for project in projects:
+                project_key = project.get('key')
+                project_name = project.get('name')
+                is_archived = project.get('archived', False)
+                
+                if is_archived and project_key:
+                    archived_projects[project_key] = {
+                        'key': project_key,
+                        'name': project_name,
+                        'archived': True
+                    }
+            
+            print(f"✓ Found {len(projects)} total projects, {len(archived_projects)} archived")
+            return archived_projects
+            
+        except Exception as e:
+            print(f"⚠ Warning: Failed to fetch projects: {e}")
+            return None
+        
+    except Exception as e:
+        print(f"⚠ Warning: Could not fetch archived projects: {e}")
         return None
 
 
@@ -218,6 +276,47 @@ def calculate_age_stats(duplicate_groups):
     return age_buckets
 
 
+def calculate_archived_project_stats(duplicate_groups, project_stats, archived_projects):
+    """
+    Calculate statistics for archived projects.
+    
+    Args:
+        duplicate_groups: Dictionary of file groups
+        project_stats: Project statistics from scan
+        archived_projects: Dict of archived projects from Jira
+    
+    Returns:
+        Dict with archived project statistics
+    """
+    if not archived_projects:
+        return None
+    
+    archived_stats = {
+        'total_storage': 0,
+        'total_files': 0,
+        'project_count': 0,
+        'projects': []
+    }
+    
+    for project_key, stats in project_stats.items():
+        if project_key in archived_projects:
+            archived_stats['total_storage'] += stats['total_size']
+            archived_stats['total_files'] += stats['file_count']
+            archived_stats['project_count'] += 1
+            
+            archived_stats['projects'].append({
+                'key': project_key,
+                'name': archived_projects[project_key]['name'],
+                'total_storage': stats['total_size'],
+                'file_count': stats['file_count']
+            })
+    
+    # Sort by storage
+    archived_stats['projects'].sort(key=lambda x: x['total_storage'], reverse=True)
+    
+    return archived_stats if archived_stats['project_count'] > 0 else None
+
+
 def calculate_status_stats(duplicate_groups):
     """Calculate per-status statistics."""
     status_stats = defaultdict(lambda: {'total_size': 0, 'file_count': 0})
@@ -307,8 +406,16 @@ def generate_report(scan_data, output_path, min_file_size_mb=10, min_days_inacti
     # Fetch active users from Jira for orphaned data analysis
     active_users = fetch_active_users_from_jira()
     
+    # Fetch archived projects from Jira
+    archived_projects = fetch_archived_projects_from_jira()
+    
     # Calculate user stats with orphaned data detection
     user_stats, orphaned_stats = calculate_user_stats(duplicate_groups, active_users)
+    
+    # Calculate archived project statistics
+    archived_project_stats = calculate_archived_project_stats(
+        duplicate_groups, project_stats, archived_projects
+    )
     
     age_stats = calculate_age_stats(duplicate_groups)
     status_stats = calculate_status_stats(duplicate_groups)
@@ -388,7 +495,7 @@ def generate_report(scan_data, output_path, min_file_size_mb=10, min_days_inacti
         scan_state, projects_data, top_file_types, top_storage_users,
         age_stats, status_stats, frozen_dinosaurs, remaining_files,
         total_storage, total_files, min_file_size_mb, min_days_inactive,
-        orphaned_stats
+        orphaned_stats, archived_project_stats
     )
     
     with open(output_path, 'w', encoding='utf-8') as f:

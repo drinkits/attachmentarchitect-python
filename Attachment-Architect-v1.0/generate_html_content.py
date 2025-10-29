@@ -18,7 +18,7 @@ def format_bytes(bytes_value):
 def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
                   age_stats, status_stats, frozen_dinosaurs, remaining_files,
                   total_storage, total_files, min_file_size_mb, min_days_inactive,
-                  orphaned_stats=None):
+                  orphaned_stats=None, archived_project_stats=None):
     """Generate complete HTML content."""
     
     projects_json = json.dumps(projects_data)
@@ -477,7 +477,7 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
                 <button class="tab" onclick="showTab('heatindex')">🔥 Heat Index</button>
             </div>
             
-            {generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats)}
+            {generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats, archived_project_stats)}
         </div>
     </div>
     
@@ -754,7 +754,7 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
 """
 
 
-def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats=None):
+def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats=None, archived_project_stats=None):
     """Generate all tab content."""
     
     tabs_html = ""
@@ -769,7 +769,7 @@ def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stat
     tabs_html += generate_user_tab(top_storage_users, orphaned_stats)
     
     # By Age Tab
-    tabs_html += generate_age_tab(age_stats)
+    tabs_html += generate_age_tab(age_stats, archived_project_stats)
     
     # By Status Tab
     tabs_html += generate_status_tab(status_stats)
@@ -1021,13 +1021,113 @@ def generate_user_tab(top_storage_users, orphaned_stats=None):
     return html
 
 
-def generate_age_tab(age_stats):
-    """Generate age tab content."""
+def generate_age_tab(age_stats, archived_project_stats=None):
+    """Generate age tab content with archived projects analysis."""
     html = """
             <div id="age" class="tab-content">
                 <h3 style="margin-bottom: 10px;">Attachment Age Distribution</h3>
                 <p style="color: #7f8c8d; margin-bottom: 20px;">Understand if your storage is consumed by recent or old files</p>
-                
+    """
+    
+    # Archived Projects Quick Win (if available)
+    if archived_project_stats and archived_project_stats['project_count'] > 0:
+        html += f"""
+                <!-- Archived Projects Quick Win -->
+                <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left: 5px solid #28a745; padding: 25px; border-radius: 8px; margin-bottom: 35px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="font-size: 48px; margin-right: 15px;">🔥</div>
+                        <div>
+                            <h4 style="color: #155724; margin: 0; font-size: 22px; font-weight: 700;">
+                                Quick Win: Archived Projects
+                            </h4>
+                            <p style="color: #28a745; margin: 5px 0 0 0; font-size: 14px;">
+                                Safest and fastest cleanup candidates
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Card -->
+                    <div style="background: white; padding: 30px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #28a745;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 56px; font-weight: 800; color: #28a745; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
+                                {format_bytes(archived_project_stats['total_storage'])}
+                            </div>
+                            <div style="font-size: 20px; color: #424242; margin-bottom: 8px; font-weight: 600;">
+                                of attachments within <strong style="color: #28a745;">{archived_project_stats['project_count']} archived projects</strong>
+                            </div>
+                            <div style="font-size: 15px; color: #666; padding: 15px; background: #f5f5f5; border-radius: 6px; margin-top: 15px;">
+                                <div style="margin-bottom: 5px;">
+                                    📊 <strong>{archived_project_stats['total_files']:,} files</strong> ready for safe cleanup
+                                </div>
+                                <div style="font-size: 13px; color: #999; margin-top: 8px;">
+                                    These projects are archived and no longer active
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top 5 Archived Projects Table -->
+                    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h5 style="margin: 0 0 20px 0; color: #333; font-size: 18px; font-weight: 600; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+                            📦 Top 5 Archived Projects by Storage
+                        </h5>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #d4edda;">
+                                    <th style="padding: 14px 12px; text-align: left; border-bottom: 2px solid #28a745; font-weight: 600; color: #155724; font-size: 12px; text-transform: uppercase;">
+                                        Project
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #28a745; font-weight: 600; color: #155724; font-size: 12px; text-transform: uppercase;">
+                                        Files
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #28a745; font-weight: 600; color: #155724; font-size: 12px; text-transform: uppercase;">
+                                        Total Storage
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        """
+        
+        for i, project in enumerate(archived_project_stats['projects'][:5], 1):
+            row_bg = '#f8f9fa' if i % 2 == 0 else 'white'
+            html += f"""
+                                <tr style="background: {row_bg}; transition: background 0.2s;" onmouseover="this.style.background='#e2f0e4'" onmouseout="this.style.background='{row_bg}'">
+                                    <td style="padding: 16px 12px; border-bottom: 1px solid #f0f0f0;">
+                                        <div style="font-weight: 600; color: #333; margin-bottom: 3px;">{project['name']}</div>
+                                        <div style="font-size: 12px; color: #999; font-family: monospace;">({project['key']})</div>
+                                    </td>
+                                    <td style="padding: 16px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; color: #666; font-weight: 500;">
+                                        {project['file_count']:,}
+                                    </td>
+                                    <td style="padding: 16px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #28a745; font-size: 15px;">
+                                        {format_bytes(project['total_storage'])}
+                                    </td>
+                                </tr>
+            """
+        
+        html += """
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Action Items -->
+                    <div style="margin-top: 20px; padding: 18px 20px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3;">
+                        <div style="font-size: 14px; color: #1565c0; font-weight: 600; margin-bottom: 10px;">
+                            💡 Why This is a Quick Win:
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; color: #424242; font-size: 13px; line-height: 1.8;">
+                            <li><strong>Zero Risk:</strong> Archived projects are no longer active</li>
+                            <li><strong>Fast Cleanup:</strong> Bulk delete entire project attachments</li>
+                            <li><strong>Immediate Impact:</strong> Free up significant storage quickly</li>
+                            <li><strong>Easy Approval:</strong> No active work will be affected</li>
+                        </ul>
+                    </div>
+                </div>
+        """
+    
+    # Continue with age distribution chart
+    html += """
+                <h4 style="margin: 30px 0 15px 0;">Age Distribution</h4>
                 <div class="bar-chart">
     """
     
