@@ -7,7 +7,7 @@ jira:
 
 scan:
   batch_size: 100  # Issues to fetch per API call
-  thread_pool_size: 12  # Parallel download workers (only used if use_content_hash=true)
+  thread_pool_size: 6  # Parallel download workers (reduced to 6 to prevent overheating)
   max_file_size_gb: 5  # Skip files larger than this
   download_timeout_seconds: 300  # 5 minutes per file
   rate_limit_per_second: 50  # API requests per second
@@ -17,7 +17,7 @@ scan:
   
 storage:
   database_path: "./scans/scan.db"
-  checkpoint_interval: 100  # Save progress every N issues
+  checkpoint_interval: 500  # Save progress every N issues (increased to reduce disk I/O)
   
 output:
   formats:
