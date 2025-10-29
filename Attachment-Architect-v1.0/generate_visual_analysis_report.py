@@ -22,12 +22,116 @@ def format_bytes(bytes_value):
     return f"{bytes_value:.2f} PB"
 
 
-def calculate_user_stats(duplicate_groups):
-    """Calculate per-user statistics."""
+def fetch_active_users_from_jira():
+    """
+    Fetch list of active users from Jira.
+    Returns set of active user IDs.
+    """
+    try:
+        import os
+        import requests
+        from requests.auth import HTTPBasicAuth
+        
+        # Try to load dotenv if available
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            # dotenv not available, will use environment variables directly
+            pass
+        
+        # Load credentials from environment
+        base_url = os.getenv('JIRA_BASE_URL', '').rstrip('/')
+        token = os.getenv('JIRA_TOKEN')
+        username = os.getenv('JIRA_USERNAME')
+        password = os.getenv('JIRA_PASSWORD')
+        
+        if not base_url:
+            print("⚠ Warning: JIRA_BASE_URL not set. Cannot fetch active users.")
+            return None
+        
+        # Create session
+        session = requests.Session()
+        
+        if token:
+            session.headers.update({'Authorization': f'Bearer {token}'})
+        elif username and password:
+            session.auth = HTTPBasicAuth(username, password)
+        else:
+            print("⚠ Warning: No Jira credentials found. Cannot fetch active users.")
+            return None
+        
+        session.headers.update({
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        })
+        
+        print("📡 Fetching active users from Jira...")
+        
+        # Fetch all active users (paginated)
+        active_users = set()
+        start_at = 0
+        max_results = 1000
+        
+        while True:
+            url = f"{base_url}/rest/api/2/user/search"
+            params = {
+                'username': '.',  # Search for all users
+                'startAt': start_at,
+                'maxResults': max_results,
+                'includeActive': True,
+                'includeInactive': False
+            }
+            
+            try:
+                response = session.get(url, params=params, timeout=30)
+                response.raise_for_status()
+                users = response.json()
+                
+                if not users:
+                    break
+                
+                for user in users:
+                    # Get user identifier (key or name)
+                    user_id = user.get('key') or user.get('name') or user.get('accountId')
+                    if user_id:
+                        active_users.add(user_id)
+                
+                print(f"  Fetched {len(users)} users (total: {len(active_users)})")
+                
+                if len(users) < max_results:
+                    break
+                
+                start_at += max_results
+                
+            except requests.exceptions.RequestException as e:
+                print(f"⚠ Warning: Failed to fetch users: {e}")
+                break
+        
+        print(f"✓ Found {len(active_users)} active users in Jira")
+        return active_users
+        
+    except Exception as e:
+        print(f"⚠ Warning: Could not fetch active users: {e}")
+        return None
+
+
+def calculate_user_stats(duplicate_groups, active_users=None):
+    """
+    Calculate per-user statistics.
+    
+    Args:
+        duplicate_groups: Dictionary of file groups
+        active_users: Set of active user IDs (optional)
+    
+    Returns:
+        Tuple of (user_list, orphaned_stats)
+    """
     user_stats = defaultdict(lambda: {
         'total_storage': 0,
         'file_count': 0,
-        'display_name': 'Unknown'
+        'display_name': 'Unknown',
+        'is_active': True  # Default to active if we don't have active user list
     })
     
     for file_hash, group in duplicate_groups.items():
@@ -38,17 +142,50 @@ def calculate_user_stats(duplicate_groups):
         user_stats[author_id]['display_name'] = author_name
         user_stats[author_id]['total_storage'] += file_size
         user_stats[author_id]['file_count'] += 1
+        
+        # Check if user is active
+        if active_users is not None:
+            user_stats[author_id]['is_active'] = author_id in active_users
     
-    user_list = []
+    # Separate active and inactive users
+    active_user_list = []
+    inactive_user_list = []
+    
     for user_id, stats in user_stats.items():
-        user_list.append({
+        user_data = {
             'user_id': user_id,
             'display_name': stats['display_name'],
             'total_storage': stats['total_storage'],
-            'file_count': stats['file_count']
-        })
+            'file_count': stats['file_count'],
+            'is_active': stats['is_active']
+        }
+        
+        if stats['is_active']:
+            active_user_list.append(user_data)
+        else:
+            inactive_user_list.append(user_data)
     
-    return sorted(user_list, key=lambda x: x['total_storage'], reverse=True)
+    # Sort by storage
+    active_user_list.sort(key=lambda x: x['total_storage'], reverse=True)
+    inactive_user_list.sort(key=lambda x: x['total_storage'], reverse=True)
+    
+    # Calculate orphaned data statistics
+    orphaned_stats = None
+    if active_users is not None:
+        total_orphaned_storage = sum(u['total_storage'] for u in inactive_user_list)
+        total_orphaned_files = sum(u['file_count'] for u in inactive_user_list)
+        
+        orphaned_stats = {
+            'total_storage': total_orphaned_storage,
+            'total_files': total_orphaned_files,
+            'inactive_user_count': len(inactive_user_list),
+            'top_inactive_users': inactive_user_list[:5]  # Top 5 inactive users
+        }
+    
+    # Combine all users for backward compatibility
+    all_users = active_user_list + inactive_user_list
+    
+    return all_users, orphaned_stats
 
 
 def calculate_age_stats(duplicate_groups):
@@ -167,7 +304,12 @@ def generate_report(scan_data, output_path, min_file_size_mb=10, min_days_inacti
     project_stats = scan_stats.get('project_stats', {})
     file_type_stats = scan_stats.get('file_type_stats', {})
     
-    user_stats = calculate_user_stats(duplicate_groups)
+    # Fetch active users from Jira for orphaned data analysis
+    active_users = fetch_active_users_from_jira()
+    
+    # Calculate user stats with orphaned data detection
+    user_stats, orphaned_stats = calculate_user_stats(duplicate_groups, active_users)
+    
     age_stats = calculate_age_stats(duplicate_groups)
     status_stats = calculate_status_stats(duplicate_groups)
     
@@ -245,7 +387,8 @@ def generate_report(scan_data, output_path, min_file_size_mb=10, min_days_inacti
     html = generate_html(
         scan_state, projects_data, top_file_types, top_storage_users,
         age_stats, status_stats, frozen_dinosaurs, remaining_files,
-        total_storage, total_files, min_file_size_mb, min_days_inactive
+        total_storage, total_files, min_file_size_mb, min_days_inactive,
+        orphaned_stats
     )
     
     with open(output_path, 'w', encoding='utf-8') as f:

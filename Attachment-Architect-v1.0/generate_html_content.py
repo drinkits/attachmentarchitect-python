@@ -17,7 +17,8 @@ def format_bytes(bytes_value):
 
 def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
                   age_stats, status_stats, frozen_dinosaurs, remaining_files,
-                  total_storage, total_files, min_file_size_mb, min_days_inactive):
+                  total_storage, total_files, min_file_size_mb, min_days_inactive,
+                  orphaned_stats=None):
     """Generate complete HTML content."""
     
     projects_json = json.dumps(projects_data)
@@ -476,7 +477,7 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
                 <button class="tab" onclick="showTab('heatindex')">🔥 Heat Index</button>
             </div>
             
-            {generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive)}
+            {generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats)}
         </div>
     </div>
     
@@ -753,7 +754,7 @@ def generate_html(scan_state, projects_data, top_file_types, top_storage_users,
 """
 
 
-def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive):
+def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stats, status_stats, frozen_dinosaurs, remaining_files, min_file_size_mb, min_days_inactive, orphaned_stats=None):
     """Generate all tab content."""
     
     tabs_html = ""
@@ -765,7 +766,7 @@ def generate_all_tabs(projects_data, top_file_types, top_storage_users, age_stat
     tabs_html += generate_filetype_tab(top_file_types)
     
     # By User Tab
-    tabs_html += generate_user_tab(top_storage_users)
+    tabs_html += generate_user_tab(top_storage_users, orphaned_stats)
     
     # By Age Tab
     tabs_html += generate_age_tab(age_stats)
@@ -852,13 +853,140 @@ def generate_filetype_tab(top_file_types):
     return html
 
 
-def generate_user_tab(top_storage_users):
-    """Generate user tab content."""
+def generate_user_tab(top_storage_users, orphaned_stats=None):
+    """Generate user tab content with optional orphaned data section."""
     html = """
             <div id="users" class="tab-content">
                 <h3 style="margin-bottom: 10px;">User Behavior Analysis</h3>
                 <p style="color: #7f8c8d; margin-bottom: 20px;">Discover which users contribute most to storage usage</p>
-                
+    """
+    
+    # Orphaned Data Risk Report (if available)
+    if orphaned_stats and orphaned_stats['inactive_user_count'] > 0:
+        html += f"""
+                <!-- Orphaned Data Risk Report -->
+                <div style="background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%); border-left: 5px solid #ff9800; padding: 25px; border-radius: 8px; margin-bottom: 35px; box-shadow: 0 4px 12px rgba(255, 152, 0, 0.15);">
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="font-size: 48px; margin-right: 15px;">⚠️</div>
+                        <div>
+                            <h4 style="color: #e65100; margin: 0; font-size: 22px; font-weight: 700;">
+                                Orphaned Data Risk Report
+                            </h4>
+                            <p style="color: #f57c00; margin: 5px 0 0 0; font-size: 14px;">
+                                Critical security and compliance issue detected
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Card -->
+                    <div style="background: white; padding: 30px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #ffb74d;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 56px; font-weight: 800; color: #d32f2f; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
+                                {format_bytes(orphaned_stats['total_storage'])}
+                            </div>
+                            <div style="font-size: 20px; color: #424242; margin-bottom: 8px; font-weight: 600;">
+                                of attachment data is <strong style="color: #d32f2f;">"orphaned"</strong>
+                            </div>
+                            <div style="font-size: 15px; color: #666; padding: 15px; background: #f5f5f5; border-radius: 6px; margin-top: 15px;">
+                                <div style="margin-bottom: 5px;">
+                                    📊 <strong>{orphaned_stats['total_files']:,} files</strong> from <strong>{orphaned_stats['inactive_user_count']} inactive or deleted users</strong>
+                                </div>
+                                <div style="font-size: 13px; color: #999; margin-top: 8px;">
+                                    These users no longer have active accounts in your Jira instance
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top 5 Inactive Users Table -->
+                    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <h5 style="margin: 0 0 20px 0; color: #333; font-size: 18px; font-weight: 600; border-bottom: 2px solid #ff9800; padding-bottom: 10px;">
+                            🔍 Top 5 Inactive Users - Data Left Behind
+                        </h5>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #fff3e0;">
+                                    <th style="padding: 14px 12px; text-align: left; border-bottom: 2px solid #ffb74d; font-weight: 600; color: #e65100; font-size: 12px; text-transform: uppercase;">
+                                        User
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #ffb74d; font-weight: 600; color: #e65100; font-size: 12px; text-transform: uppercase;">
+                                        Files
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: right; border-bottom: 2px solid #ffb74d; font-weight: 600; color: #e65100; font-size: 12px; text-transform: uppercase;">
+                                        Storage
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: center; border-bottom: 2px solid #ffb74d; font-weight: 600; color: #e65100; font-size: 12px; text-transform: uppercase;">
+                                        Risk Level
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        """
+        
+        for i, user in enumerate(orphaned_stats['top_inactive_users'], 1):
+            # Calculate risk level based on storage
+            storage_gb = user['total_storage'] / (1024**3)
+            if storage_gb > 10:
+                risk_badge = '<span style="background: #d32f2f; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">🔴 HIGH</span>'
+            elif storage_gb > 1:
+                risk_badge = '<span style="background: #ff9800; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">🟡 MEDIUM</span>'
+            else:
+                risk_badge = '<span style="background: #ffc107; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">🟢 LOW</span>'
+            
+            row_bg = '#fafafa' if i % 2 == 0 else 'white'
+            html += f"""
+                                <tr style="background: {row_bg}; transition: background 0.2s;" onmouseover="this.style.background='#fff8e1'" onmouseout="this.style.background='{row_bg}'">
+                                    <td style="padding: 16px 12px; border-bottom: 1px solid #f0f0f0;">
+                                        <div style="font-weight: 600; color: #333; margin-bottom: 3px;">{user['display_name']}</div>
+                                        <div style="font-size: 12px; color: #999; font-family: monospace;">({user['user_id']})</div>
+                                    </td>
+                                    <td style="padding: 16px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; color: #666; font-weight: 500;">
+                                        {user['file_count']:,}
+                                    </td>
+                                    <td style="padding: 16px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; font-weight: 700; color: #d32f2f; font-size: 15px;">
+                                        {format_bytes(user['total_storage'])}
+                                    </td>
+                                    <td style="padding: 16px 12px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+                                        {risk_badge}
+                                    </td>
+                                </tr>
+            """
+        
+        html += """
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Security Warning -->
+                    <div style="margin-top: 20px; padding: 18px 20px; background: #fff; border-radius: 6px; border-left: 4px solid #d32f2f; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <div style="font-size: 24px; flex-shrink: 0;">🔒</div>
+                            <div style="font-size: 13px; color: #555; line-height: 1.6;">
+                                <strong style="color: #d32f2f; font-size: 14px;">Security & Compliance Risk:</strong><br>
+                                Orphaned data may contain sensitive information from former employees or deleted accounts. 
+                                This poses potential security, compliance, and data governance risks. 
+                                <strong>Consider archiving or deleting this data</strong> as part of your data retention policy.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Items -->
+                    <div style="margin-top: 20px; padding: 18px 20px; background: #e3f2fd; border-radius: 6px; border-left: 4px solid #2196f3;">
+                        <div style="font-size: 14px; color: #1565c0; font-weight: 600; margin-bottom: 10px;">
+                            💡 Recommended Actions:
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; color: #424242; font-size: 13px; line-height: 1.8;">
+                            <li>Review orphaned data with your security team</li>
+                            <li>Identify files containing sensitive information</li>
+                            <li>Archive or delete data according to retention policies</li>
+                            <li>Document actions taken for compliance audits</li>
+                        </ul>
+                    </div>
+                </div>
+        """
+    
+    # Top 10 Storage Consumers
+    html += """
                 <h4 style="margin: 30px 0 15px 0;">Top 10 Storage Consumers</h4>
                 <div class="bar-chart">
     """
@@ -868,9 +996,14 @@ def generate_user_tab(top_storage_users):
         width_pct = (user['total_storage'] / max_size) * 100
         # Format as "Name Surname (username)"
         user_label = f"{user['display_name']} ({user['user_id']})"
+        
+        # Add visual indicator for inactive users
+        is_inactive = not user.get('is_active', True)
+        inactive_badge = ' <span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 600;">INACTIVE</span>' if is_inactive else ''
+        
         html += f"""
                     <div class="bar-item">
-                        <div class="bar-label bar-label-wide" title="{user_label}">{user_label}</div>
+                        <div class="bar-label bar-label-wide" title="{user_label}">{user_label}{inactive_badge}</div>
                         <div class="bar-track">
                             <div class="bar-fill" style="width: {width_pct}%;">
                                 {user['file_count']:,} files
